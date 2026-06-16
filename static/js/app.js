@@ -28,6 +28,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRetry = document.getElementById('btn-retry');
     const filterChips = document.getElementById('filter-chips');
     const btnExportCSV = document.getElementById('btn-export-csv');
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeLabel = document.getElementById('theme-label');
+
+    // Theme toggle: restore saved preference
+    function applyTheme(isLight) {
+        if (isLight) {
+            document.body.classList.add('light-mode');
+            themeIcon.className = 'fa-solid fa-moon';
+            themeLabel.textContent = 'Dark';
+        } else {
+            document.body.classList.remove('light-mode');
+            themeIcon.className = 'fa-solid fa-sun';
+            themeLabel.textContent = 'Light';
+        }
+    }
+    const savedTheme = localStorage.getItem('bq-theme');
+    applyTheme(savedTheme === 'light');
     
     // Composer Elements
     const composerContainer = document.getElementById('composer-container');
@@ -356,6 +374,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Refresh Action
     btnRefresh.addEventListener('click', () => {
         fetchReleaseNotes(true);
+    });
+
+    // Theme Toggle Action
+    btnThemeToggle.addEventListener('click', () => {
+        const isNowLight = !document.body.classList.contains('light-mode');
+        applyTheme(isNowLight);
+        localStorage.setItem('bq-theme', isNowLight ? 'light' : 'dark');
     });
 
     // Export to CSV Action
