@@ -590,6 +590,35 @@ body {
     align-items: center;
 }
 
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-card-action {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    position: relative;
+}
+.btn-card-action:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+.btn-card-action.copied {
+    color: var(--color-feature-text);
+}
+
 /* Category Badges */
 .badge {
     display: inline-flex;

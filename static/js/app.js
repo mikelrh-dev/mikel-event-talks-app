@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRefresh = document.getElementById('btn-refresh');
     const btnRetry = document.getElementById('btn-retry');
     const filterChips = document.getElementById('filter-chips');
+    const btnExportCSV = document.getElementById('btn-export-csv');
     
     // Composer Elements
     const composerContainer = document.getElementById('composer-container');
@@ -172,19 +173,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.innerHTML = `
                         <div class="card-header">
                             <span class="badge ${typeClass}">${update.type}</span>
-                            <span class="tweet-action-hint">
-                                <i class="fa-brands fa-x-twitter"></i> Select to Tweet
-                            </span>
+                            <div class="card-actions">
+                                <button class="btn-card-action btn-copy-card" title="Copy text to clipboard">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                                <span class="tweet-action-hint">
+                                    <i class="fa-brands fa-x-twitter"></i> Select to Tweet
+                                </span>
+                            </div>
                         </div>
                         <div class="update-desc">
                             ${update.content_html}
                         </div>
                     `;
 
+                    // Copy card text event
+                    const copyBtn = card.querySelector('.btn-copy-card');
+                    copyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent card selection and side composer popup
+                        navigator.clipboard.writeText(update.content_text).then(() => {
+                            showToast('Update copied to clipboard!');
+                            
+                            const icon = copyBtn.querySelector('i');
+                            copyBtn.classList.add('copied');
+                            icon.className = 'fa-solid fa-check';
+                            
+                            setTimeout(() => {
+                                copyBtn.classList.remove('copied');
+                                icon.className = 'fa-regular fa-copy';
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Failed to copy card text:', err);
+                        });
+                    });
+
                     // Card select event
                     card.addEventListener('click', (e) => {
-                        // Prevent click triggering if user is clicking an anchor tag inside description
-                        if (e.target.tagName.toLowerCase() === 'a') {
+                        // Prevent click triggering if user is clicking an anchor tag inside description or copy button
+                        if (e.target.tagName.toLowerCase() === 'a' || e.target.closest('.btn-copy-card')) {
                             return;
                         }
                         selectUpdateItem(update, entry);
@@ -330,6 +356,57 @@ document.addEventListener('DOMContentLoaded', () => {
     // Refresh Action
     btnRefresh.addEventListener('click', () => {
         fetchReleaseNotes(true);
+    });
+
+    // Export to CSV Action
+    btnExportCSV.addEventListener('click', () => {
+        const csvRows = [
+            ['Date', 'Type', 'Description', 'URL'] // Header row
+        ];
+        
+        let exportCount = 0;
+        releaseNotesData.forEach(entry => {
+            entry.updates.forEach(update => {
+                const matchesType = activeFilter === 'all' || 
+                    update.type.toLowerCase() === activeFilter.toLowerCase();
+                const matchesSearch = searchQuery === '' || 
+                    update.type.toLowerCase().includes(searchQuery) ||
+                    update.content_text.toLowerCase().includes(searchQuery) ||
+                    entry.date.toLowerCase().includes(searchQuery);
+                    
+                if (matchesType && matchesSearch) {
+                    const dateClean = entry.date.replace(/"/g, '""');
+                    const typeClean = update.type.replace(/"/g, '""');
+                    const textClean = update.content_text.replace(/"/g, '""');
+                    const urlClean = (entry.url || '').replace(/"/g, '""');
+                    
+                    csvRows.push([
+                        `"${dateClean}"`,
+                        `"${typeClean}"`,
+                        `"${textClean}"`,
+                        `"${urlClean}"`
+                    ]);
+                    exportCount++;
+                }
+            });
+        });
+        
+        if (exportCount === 0) {
+            showToast('No updates found to export!');
+            return;
+        }
+        
+        const csvContent = csvRows.map(row => row.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `bigquery_release_notes_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast(`Successfully exported ${exportCount} updates to CSV!`);
     });
 
     // Retry Action (from error screen)
