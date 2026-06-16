@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Insights</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Vanilla CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- Top Decorative Glows -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-database"></i>
+                    <div class="logo-sparkle"></div>
+                </div>
+                <div class="brand-text">
+                    <h1>BigQuery Release Insights</h1>
+                    <p class="subtitle">Stay updated with Google Cloud's data warehouse release notes</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <span class="last-updated" id="last-updated-text">Checking for updates...</span>
+                <button class="btn btn-refresh" id="btn-refresh" title="Force refresh from Google Cloud feed">
+                    <span class="btn-icon">
+                        <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+                    </span>
+                    Refresh Feed
+                </button>
+            </div>
+        </header>
+
+        <!-- Filters Section -->
+        <section class="filters-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search release notes, features, issues...">
+                <button class="clear-search" id="clear-search" style="display: none;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="filter-chips" id="filter-chips">
+                <button class="chip active" data-type="all">All Updates</button>
+                <button class="chip" data-type="feature"><span class="indicator feature"></span>Features</button>
+                <button class="chip" data-type="issue"><span class="indicator issue"></span>Issues</button>
+                <button class="chip" data-type="change"><span class="indicator change"></span>Changes</button>
+                <button class="chip" data-type="announcement"><span class="indicator announcement"></span>Announcements</button>
+                <button class="chip" data-type="breaking"><span class="indicator breaking"></span>Breaking</button>
+            </div>
+        </section>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Left Side: List of updates -->
+            <main class="timeline-container">
+                <div class="loader-container" id="timeline-loader">
+                    <div class="spinner"></div>
+                    <p>Fetching BigQuery release notes...</p>
+                </div>
+                
+                <div class="error-container" id="timeline-error" style="display: none;">
+                    <div class="error-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                    <h3>Failed to Load Feed</h3>
+                    <p id="error-message">Something went wrong while connecting to the BigQuery XML feed.</p>
+                    <button class="btn btn-retry" id="btn-retry">Retry Fetch</button>
+                </div>
+
+                <div class="empty-state" id="timeline-empty" style="display: none;">
+                    <div class="empty-icon"><i class="fa-regular fa-folder-open"></i></div>
+                    <h3>No updates found</h3>
+                    <p>Try modifying your search or filter tags.</p>
+                </div>
+
+                <div class="timeline" id="timeline-content" style="display: none;">
+                    <!-- Grouped timeline items go here dynamically -->
+                </div>
+            </main>
+
+            <!-- Right Side: Selected Update & Twitter Composer -->
+            <aside class="composer-container" id="composer-container">
+                <!-- Unselected State -->
+                <div class="composer-unselected" id="composer-unselected">
+                    <div class="illustration">
+                        <div class="tweet-logo-bubble">
+                            <i class="fa-brands fa-x-twitter"></i>
+                        </div>
+                        <div class="wave-lines">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                    <h3>Share Updates Instantly</h3>
+                    <p>Select any release note card on the left to read its full detail, edit a pre-formatted draft, and post it to X (Twitter).</p>
+                </div>
+
+                <!-- Selected State -->
+                <div class="composer-card" id="composer-card" style="display: none;">
+                    <div class="composer-header">
+                        <h2>Tweet Composer</h2>
+                        <button class="btn-close-composer" id="btn-close-composer" title="Close Composer">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="selected-details">
+                        <div class="meta-row">
+                            <span class="badge" id="selected-type-badge">Feature</span>
+                            <span class="date-text" id="selected-date-text">June 15, 2026</span>
+                        </div>
+                        <div class="selected-content-preview" id="selected-html-content">
+                            <!-- Raw HTML preview -->
+                        </div>
+                    </div>
+
+                    <!-- Twitter Post Preview -->
+                    <div class="tweet-preview-container">
+                        <div class="preview-tag">Preview Draft</div>
+                        
+                        <div class="x-post-box">
+                            <div class="x-avatar">
+                                <i class="fa-solid fa-user-astronaut"></i>
+                            </div>
+                            <div class="x-body">
+                                <div class="x-user-info">
+                                    <span class="x-display-name">Cloud Explorer</span>
+                                    <span class="x-username">@cloud_insights</span>
+                                    <span class="x-dot">·</span>
+                                    <span class="x-time">now</span>
+                                </div>
+                                
+                                <textarea class="x-tweet-textarea" id="tweet-textarea" spellcheck="false" rows="6" placeholder="What's happening?"></textarea>
+                                
+                                <div class="x-media-placeholder" id="x-link-card">
+                                    <i class="fa-solid fa-link"></i>
+                                    <div class="x-link-details">
+                                        <div class="x-link-domain">cloud.google.com</div>
+                                        <div class="x-link-title">BigQuery Release Notes</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="composer-footer">
+                        <div class="char-counter-container">
+                            <svg class="progress-ring" width="28" height="28">
+                                <circle class="progress-ring__circle-bg" stroke="#1e293b" stroke-width="3" fill="transparent" r="11" cx="14" cy="14"/>
+                                <circle class="progress-ring__circle" stroke="#38bdf8" stroke-width="3" fill="transparent" r="11" cx="14" cy="14"/>
+                            </svg>
+                            <span class="char-count" id="char-count">0 / 280</span>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary btn-copy" id="btn-copy" title="Copy text to clipboard">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                            <button class="btn btn-primary btn-tweet" id="btn-tweet">
+                                <i class="fa-brands fa-x-twitter"></i> Tweet Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-circle-check toast-icon"></i>
+        <span class="toast-message" id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
